@@ -39,6 +39,9 @@ namespace StopFarmingItsEnough
             withProducts.Clear();
             pairs.Clear();
             FarmingMod.Settings.Reindex();
+            // UFPC 在 PlantCollected 中直接生成副产物，不经过 GetAdditionalHarvestYield。
+            // 定义加载完成后一次性读取，其余规则、默认忽略和原版资源口径沿用统一目录。
+            Dictionary<ThingDef, List<ThingDef>> ufpcProducts = UfpcHarvestProducts.Discover();
             foreach (ThingDef plant in DefDatabase<ThingDef>.AllDefsListForReading)
             {
                 if (plant.plant?.sowTags == null || plant.plant.sowTags.Count == 0) continue;
@@ -48,6 +51,9 @@ namespace StopFarmingItsEnough
                 var extension = plant.GetModExtension<HarvestProductsExtension>();
                 if (extension?.products != null)
                     foreach (ThingDef product in extension.products) AddPair(plant, product);
+                List<ThingDef> additional;
+                if (ufpcProducts.TryGetValue(plant, out additional))
+                    foreach (ThingDef product in additional) AddPair(plant, product);
             }
             // 使用快照，避免创建缺失规则时修改正在遍历的集合。
             foreach (CropRule rule in FarmingMod.Settings.Rules.ToArray())

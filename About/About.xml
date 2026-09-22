@@ -4,9 +4,9 @@
   <author>"GentleCode"</author>
   <packageId>GentleCode.StopFarmingItsEnough</packageId>
   <supportedVersions><li>1.6</li></supportedVersions>
-  <description>Automatically pause sowing and/or harvesting above each crop's upper stock limit, and resume below its lower limit. Reads vanilla map resource statistics every 600 ticks. Includes optional Smart Farming and High Density Hydroponics compatibility.
+  <description>Automatically pause sowing and/or harvesting above each crop's upper stock limit, and resume below its lower limit. Reads vanilla map resource statistics every 600 ticks. 
 
-库存超过各作物上限时自动暂停播种和／或收获，低于下限时恢复。每 600 ticks 读取一次原版地图资源统计。包含 Smart Farming 和 High Density Hydroponics 可选兼容。</description>
+库存超过各作物上限时自动暂停播种和／或收获，低于下限时恢复。每 600 ticks 读取一次原版地图资源统计。</description>
   <modDependencies>
     <li>
       <packageId>brrainz.harmony</packageId>
@@ -17,8 +17,10 @@
   <loadAfter>
     <li>brrainz.harmony</li>
     <li>Owlchemist.SmartFarming</li>
+    <li>Kindseal.UFPC</li>
     <li>MapleApple.HighDensityHydroponics.Fixed.ZouHb.zades</li>
+    <li>OARK.RatkinFaction.OberoniaAurea</li>
+    <li>keeptpa.NivarianDraconiture</li>
   </loadAfter>
 </ModMetaData>
-
 

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Verse;
 
@@ -20,6 +20,7 @@ namespace StopFarmingItsEnough
         private bool[] available = new bool[0];
         private int builtRevision = -1;
         private bool initialized;
+        private int builtRulesRevision = -1;
 
         /// <summary>某地图上某植物的运行状态；产物索引用于合并重复库存读取。</summary>
         private sealed class RuntimeRule
@@ -60,6 +61,7 @@ namespace StopFarmingItsEnough
         /// <summary>读图后恢复规则和保存状态，不强制刷新或读取原版库存。</summary>
         public override void FinalizeInit()
         {
+            CropCatalog.EnsureCurrentGame();
             if (CropCatalog.Ready) Rebuild();
         }
 
@@ -71,7 +73,7 @@ namespace StopFarmingItsEnough
             if (!initialized) Rebuild();
             if (!settings.Enabled || (!settings.ControlSowing && !settings.ControlHarvest)) return;
             if (Find.TickManager.TicksGame % CheckInterval != 0) return;
-            if (builtRevision != settings.Revision) Rebuild();
+            if (builtRevision != settings.Revision || builtRulesRevision != CropCatalog.Settings.Revision) Rebuild();
             CheckStocks();
         }
 
@@ -112,6 +114,7 @@ namespace StopFarmingItsEnough
             stock = new int[products.Count];
             available = new bool[products.Count];
             builtRevision = FarmingMod.Settings.Revision;
+            builtRulesRevision = CropCatalog.Settings.Revision;
             initialized = true;
         }
 

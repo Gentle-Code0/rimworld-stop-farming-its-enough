@@ -13,7 +13,13 @@
     <Deterministic>true</Deterministic>
     <RimWorldDir Condition="'$(RimWorldDir)' == ''">$(MSBuildThisFileDirectory)..\..\..</RimWorldDir>
     <GameManaged>$(RimWorldDir)\RimWorldWin64_Data\Managed</GameManaged>
+    <HarmonyPath Condition="'$(HarmonyPath)' == '' and Exists('$(RimWorldDir)\..\..\workshop\content\294100\2009463077\1.6\Assemblies\0Harmony.dll')">$(RimWorldDir)\..\..\workshop\content\294100\2009463077\1.6\Assemblies\0Harmony.dll</HarmonyPath>
     <HarmonyPath Condition="'$(HarmonyPath)' == ''">$(RimWorldDir)\..\..\workshop\content\294100\2009463077\Current\Assemblies\0Harmony.dll</HarmonyPath>
+    <!-- 1.7 采用游戏自带的 .NET 10 引用；单独目标可由已安装的 .NET 9 SDK 编译器构建，
+         不把 1.7 的运行时引用或产物写入 1.6 目录。普通 Build 仍是 net48 的 1.6 构建。 -->
+    <RimWorld17Dir Condition="'$(RimWorld17Dir)' == ''">$(RimWorldDir)</RimWorld17Dir>
+    <Harmony17Path Condition="'$(Harmony17Path)' == ''">$(RimWorld17Dir)\..\..\workshop\content\294100\2009463077\1.7\Assemblies\0Harmony.dll</Harmony17Path>
+    <RimWorld17Output>$(MSBuildProjectDirectory)\..\1.7\Assemblies\StopFarmingItsEnough.dll</RimWorld17Output>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp"><HintPath>$(GameManaged)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
@@ -25,6 +31,19 @@
   <Target Name="CheckLocalReferences" BeforeTargets="ResolveReferences">
     <Error Condition="!Exists('$(GameManaged)\Assembly-CSharp.dll')" Text="Set RimWorldDir to your RimWorld installation directory (see README)." />
     <Error Condition="!Exists('$(HarmonyPath)')" Text="Set HarmonyPath to the installed Harmony mod's 0Harmony.dll (see README)." />
+  </Target>
+  <!-- dotnet msbuild Source/StopFarmingItsEnough.csproj -t:BuildRimWorld17 -->
+  <Target Name="BuildRimWorld17">
+    <Error Condition="!Exists('$(RimWorld17Dir)\Assembly-CSharp.dll') or !Exists('$(RimWorld17Dir)\UnityStubs.dll')" Text="Set RimWorld17Dir to a RimWorld 1.7 installation containing Assembly-CSharp.dll and UnityStubs.dll." />
+    <Error Condition="!Exists('$(Harmony17Path)')" Text="Set Harmony17Path to the Harmony 1.7 0Harmony.dll." />
+    <ItemGroup>
+      <RimWorld17Reference Include="$(RimWorld17Dir)\System*.dll" Exclude="$(RimWorld17Dir)\*.Native.dll" />
+      <RimWorld17Reference Include="$(RimWorld17Dir)\Assembly-CSharp.dll;$(RimWorld17Dir)\UnityStubs.dll;$(RimWorld17Dir)\Waylith.dll;$(RimWorld17Dir)\Brutal.Core.Numerics.dll;$(RimWorld17Dir)\Brutal.Core.Common.dll;$(Harmony17Path)" />
+      <RimWorld17Source Include="$(MSBuildProjectDirectory)\**\*.cs" Exclude="$(MSBuildProjectDirectory)\obj\**;$(MSBuildProjectDirectory)\bin\**;.vs\**" />
+    </ItemGroup>
+    <MakeDir Directories="$(MSBuildProjectDirectory)\..\1.7\Assemblies" />
+    <Csc Sources="@(RimWorld17Source)" References="@(RimWorld17Reference)" OutputAssembly="$(RimWorld17Output)" TargetType="Library" LangVersion="7.3" NoStandardLib="true" NoConfig="true" Optimize="true" Deterministic="true" EmitDebugInformation="false" />
+    <Message Importance="high" Text="RimWorld 1.7: $(RimWorld17Output)" />
   </Target>
 </Project>
 

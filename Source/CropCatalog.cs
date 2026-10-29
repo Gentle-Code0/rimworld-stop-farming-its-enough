@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Verse;
 
 namespace StopFarmingItsEnough
@@ -18,7 +18,7 @@ namespace StopFarmingItsEnough
         public List<ThingDef> products;
     }
 
-    /// <summary>启动时建立定义目录；仅在首次发现额外产物时增量更新，不扫描库存。</summary>
+    /// <summary>游戏初始化时建立当前存档目录；首次发现额外产物时增量更新，不扫描库存。</summary>
     public static class CropCatalog
     {
         public static readonly List<CropEntry> Entries = new List<CropEntry>();
@@ -26,6 +26,16 @@ namespace StopFarmingItsEnough
         private static readonly HashSet<ThingDef> knownPlants = new HashSet<ThingDef>();
         private static readonly HashSet<ThingDef> withProducts = new HashSet<ThingDef>();
         private static readonly Dictionary<string, CropEntry> pairs = new Dictionary<string, CropEntry>();
+        private static Game owner;
+        public static CropRuleSettings Settings { get; private set; }
+        /// <summary>换档时重新绑定目录，防止规则与手动关联跨游戏共享。</summary>
+        public static void EnsureCurrentGame(bool force = false)
+        {
+            if (Current.Game == null || (!force && owner == Current.Game && Ready)) return;
+            owner = Current.Game;
+            Settings = owner.GetComponent<GameComponent_CropRules>().Settings;
+            Build();
+        }
         public static bool Ready { get; private set; }
         public static int Revision { get; private set; }
 
@@ -33,12 +43,13 @@ namespace StopFarmingItsEnough
         public static void Build()
         {
             Ready = false;
+            if (Settings == null) return;
             Entries.Clear();
             Plants.Clear();
             knownPlants.Clear();
             withProducts.Clear();
             pairs.Clear();
-            FarmingMod.Settings.Reindex();
+            Settings.Reindex();
             // UFPC 在 PlantCollected 中直接生成副产物，不经过 GetAdditionalHarvestYield。
             // 定义加载完成后一次性读取，其余规则、默认忽略和原版资源口径沿用统一目录。
             Dictionary<ThingDef, List<ThingDef>> ufpcProducts = UfpcHarvestProducts.Discover();
@@ -56,7 +67,7 @@ namespace StopFarmingItsEnough
                     foreach (ThingDef product in additional) AddPair(plant, product);
             }
             // 使用快照，避免创建缺失规则时修改正在遍历的集合。
-            foreach (CropRule rule in FarmingMod.Settings.Rules.ToArray())
+            foreach (CropRule rule in Settings.Rules.ToArray())
             {
                 if (string.IsNullOrEmpty(rule.ProductDefName)) continue;
                 ThingDef plant = DefDatabase<ThingDef>.GetNamedSilentFail(rule.PlantDefName);
@@ -73,7 +84,7 @@ namespace StopFarmingItsEnough
         /// <summary>实际收获或手工关联时登记新产物；重复事件只进行哈希查询。</summary>
         public static void RegisterProduct(ThingDef plant, ThingDef product, bool manual = false)
         {
-            if (!Ready || plant == null || !knownPlants.Contains(plant) || !AddPair(plant, product, manual ? ProductLinkSource.Manual : ProductLinkSource.Automatic)) return;
+            if (!Ready || owner != Current.Game || plant == null || !knownPlants.Contains(plant) || !AddPair(plant, product, manual ? ProductLinkSource.Manual : ProductLinkSource.Automatic)) return;
             Entries.RemoveAll(entry => entry.Plant == plant && entry.Product == null);
             Entries.Sort(CompareEntries);
             Revision++;
@@ -91,13 +102,13 @@ namespace StopFarmingItsEnough
                 if (source == ProductLinkSource.Automatic && existing.Rule.Source != source)
                 {
                     existing.Rule.Source = source;
-                    FarmingMod.Settings.Changed();
+                    Settings.Changed();
                     Revision++;
                 }
                 return false;
             }
             withProducts.Add(plant);
-            var rule = FarmingMod.Settings.GetOrCreate(plant.defName, product.defName, product == plant.plant.harvestedThingDef);
+            var rule = Settings.GetOrCreate(plant.defName, product.defName, product == plant.plant.harvestedThingDef);
             rule.Source = source;
             if (source == ProductLinkSource.Manual && string.IsNullOrEmpty(rule.StateId))
                 rule.StateId = System.Guid.NewGuid().ToString("N");
@@ -114,7 +125,7 @@ namespace StopFarmingItsEnough
         /// <summary>检查实际目录身份和来源，防止旧界面引用或构造的条目删除自动关联。</summary>
         public static bool CanRemoveManual(CropEntry entry)
         {
-            if (entry?.Rule == null || entry.Product == null || entry.Rule.Source != ProductLinkSource.Manual) return false;
+            if (owner != Current.Game || entry?.Rule == null || entry.Product == null || entry.Rule.Source != ProductLinkSource.Manual) return false;
             CropEntry current;
             return pairs.TryGetValue(FarmingSettings.Key(entry.Plant.defName, entry.Product.defName), out current)
                 && ReferenceEquals(current, entry);
@@ -123,7 +134,7 @@ namespace StopFarmingItsEnough
         /// <summary>移除手工关联及其设置；删除最后一个产物时恢复作物占位行，允许再次添加。</summary>
         public static bool RemoveManualProduct(CropEntry entry)
         {
-            if (!CanRemoveManual(entry) || !FarmingMod.Settings.RemoveManual(entry.Rule)) return false;
+            if (!CanRemoveManual(entry) || !Settings.RemoveManual(entry.Rule)) return false;
             pairs.Remove(FarmingSettings.Key(entry.Plant.defName, entry.Product.defName));
             Entries.Remove(entry);
             if (!Entries.Exists(other => other.Plant == entry.Plant))

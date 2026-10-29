@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Verse;
 
@@ -7,7 +7,7 @@ namespace StopFarmingItsEnough
     /// <summary>来源不明用于兼容旧设置，不能假定它是手工关联。</summary>
     public enum ProductLinkSource { Unknown, Automatic, Manual }
 
-    /// <summary>单个作物＋产物的全局配置；同产物的不同作物互不覆盖。</summary>
+    /// <summary>单个作物＋产物的存档配置；同产物的不同作物互不覆盖。</summary>
     public sealed class CropRule : IExposable
     {
         public string PlantDefName;
@@ -52,11 +52,10 @@ namespace StopFarmingItsEnough
         public bool ControlHarvest;
         public bool HideSowingIcon;
         public bool HideHarvestIcon;
-        public List<CropRule> Rules = new List<CropRule>();
-        private readonly Dictionary<string, CropRule> byName = new Dictionary<string, CropRule>();
+        // 只用于旧存档升级；当前游戏编辑不写入迁移模板。
+        public List<CropRule> LegacyRules = new List<CropRule>();
         public int Revision { get; private set; }
-
-        /// <summary>保存全局开关和逐植物配置；缺失的模组植物规则保留，重新启用模组后可继续使用。</summary>
+        /// <summary>保存全局开关和只读迁移模板，当前规则随游戏保存。</summary>
         public override void ExposeData()
         {
             Scribe_Values.Look(ref Enabled, "enabled", true);
@@ -64,81 +63,12 @@ namespace StopFarmingItsEnough
             Scribe_Values.Look(ref ControlHarvest, "controlHarvest", false);
             Scribe_Values.Look(ref HideSowingIcon, "hideSowingIcon", false);
             Scribe_Values.Look(ref HideHarvestIcon, "hideHarvestIcon", false);
-            Scribe_Collections.Look(ref Rules, "rules", LookMode.Deep);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (Rules == null) Rules = new List<CropRule>();
-                Reindex();
-            }
+            Scribe_Collections.Look(ref LegacyRules, "rules", LookMode.Deep);
+            if (LegacyRules == null) LegacyRules = new List<CropRule>();
         }
-
-        /// <summary>重建设置索引并剔除损坏／重复键；只在启动或读取设置时运行。</summary>
-        public void Reindex()
-        {
-            byName.Clear();
-            for (int i = Rules.Count - 1; i >= 0; i--)
-            {
-                CropRule rule = Rules[i];
-                if (rule == null || string.IsNullOrEmpty(rule.PlantDefName) || byName.ContainsKey(Key(rule.PlantDefName, rule.ProductDefName)))
-                {
-                    Rules.RemoveAt(i);
-                    continue;
-                }
-                byName.Add(Key(rule.PlantDefName, rule.ProductDefName), rule);
-            }
-            Changed();
-        }
-
-        /// <summary>返回指定植物的独立规则；新发现植物默认忽略，避免对新产物误用阈值。</summary>
-        public CropRule GetOrCreate(string plantDefName, string productDefName, bool primary = false)
-        {
-            string key = Key(plantDefName, productDefName);
-            CropRule rule;
-            if (byName.TryGetValue(key, out rule)) return rule;
-            string legacyKey = Key(plantDefName, null);
-            if (primary && byName.TryGetValue(legacyKey, out rule))
-            {
-                // 旧版本的逐作物配置仅迁移到主产物，不复制到新增副产物。
-                byName.Remove(legacyKey);
-                rule.ProductDefName = productDefName;
-            }
-            else
-            {
-                rule = new CropRule { PlantDefName = plantDefName, ProductDefName = productDefName };
-                Rules.Add(rule);
-            }
-            byName.Add(key, rule);
-            Changed();
-            return rule;
-        }
-
-        /// <summary>仅删除索引中同一个已证实手工创建的规则；旧运行缓存立即通过 Ignore 放行。</summary>
-        internal bool RemoveManual(CropRule rule)
-        {
-            if (rule == null || rule.Source != ProductLinkSource.Manual) return false;
-            string key = Key(rule.PlantDefName, rule.ProductDefName);
-            CropRule current;
-            if (!byName.TryGetValue(key, out current) || !ReferenceEquals(current, rule)) return false;
-            rule.IgnoreSowing = true;
-            rule.IgnoreHarvest = true;
-            byName.Remove(key);
-            Rules.Remove(rule);
-            Changed();
-            return true;
-        }
-        /// <summary>使用植物名称长度前缀生成无歧义的作物＋产物持久化键。</summary>
-        public static string Key(string plant, string product)
-        {
-            return plant.Length + ":" + plant + (product ?? "");
-        }
-        /// <summary>使各地图在下次检查时重建小型规则缓存；不直接扫描库存。</summary>
-        public void Changed()
-        {
-            unchecked { Revision++; }
-        }
+        /// <summary>保持原有存档键格式。</summary>
+        public static string Key(string plant, string product) => CropRuleSettings.Key(plant, product);
+        /// <summary>通知地图在下一检查点更新全局配置。</summary>
+        public void Changed() { unchecked { Revision++; } }
     }
 }
-
-
-
-

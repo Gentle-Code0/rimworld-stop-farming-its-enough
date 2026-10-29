@@ -15,8 +15,11 @@ namespace StopFarmingItsEnough
         {
             var methods = new HashSet<MethodBase>();
             methods.Add(AccessTools.Method(typeof(ThingComp), nameof(ThingComp.GetAdditionalHarvestYield)));
-            foreach (ThingDef plant in CropCatalog.Plants)
+            // 补丁在进入存档之前安装，此时存档专属 CropCatalog 尚未建立。
+            // 直接读取已加载的植物定义，否则自定义组件覆盖的方法会漏装补丁。
+            foreach (ThingDef plant in DefDatabase<ThingDef>.AllDefsListForReading)
             {
+                if (plant.plant?.sowTags == null || plant.plant.sowTags.Count == 0) continue;
                 if (plant.comps == null) continue;
                 foreach (CompProperties comp in plant.comps)
                 {

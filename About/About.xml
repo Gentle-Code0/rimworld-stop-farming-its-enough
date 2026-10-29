@@ -3,7 +3,7 @@
   <name>Stop farming, it's enough!</name>
   <author>"GentleCode"</author>
   <packageId>GentleCode.StopFarmingItsEnough</packageId>
-  <supportedVersions><li>1.6</li></supportedVersions>
+  <supportedVersions><li>1.6</li><li>1.7</li></supportedVersions>
   <description>Automatically pause sowing and/or harvesting above each crop's upper stock limit, and resume below its lower limit. Reads vanilla map resource statistics every 600 ticks. 
 
 库存超过各作物上限时自动暂停播种和／或收获，低于下限时恢复。每 600 ticks 读取一次原版地图资源统计。</description>

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <SFIE_RulesTitle>Crop stock limits</SFIE_RulesTitle>
+  <SFIE_RulesLocation>Select a growing zone or player growing facility and click specific button to edit all crop/product rules. </SFIE_RulesLocation>
+  <SFIE_SaveRulesHint>These rules apply to all maps in this save. Stock counts and pause states are independent for each map. Both ignore options are enabled for new rules. Changes are saved when you save the game.</SFIE_SaveRulesHint>
   <SFIE_MenuPausedSowing>Sowing paused by inventory limit</SFIE_MenuPausedSowing>
   <SFIE_MenuPausedHarvest>Harvesting paused by inventory limit</SFIE_MenuPausedHarvest>
   <SFIE_Enabled>Enable inventory farming limits</SFIE_Enabled>

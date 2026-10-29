@@ -136,3 +136,30 @@
 
 
 
+
+## 1.5.0 验证（2026-09-22）
+
+Release 编译通过，0 警告、0 错误。隔离 .NET 9 测试加载生产 DLL 与本机 RimWorld DLL，安装全部 Harmony 补丁，22 项断言通过：种植区与 Building_PlantGrower 按钮补丁注册；新游戏默认值；连续切换游戏的规则及手动关联隔离；旧配置深复制及跨旧档独立迁移；原生 Scribe 写入、读取并 FinalizeLoading 后阈值、双忽略和手动 StateId 恢复；已有存档规则优先于旧全局模板；删除手动关联不影响原游戏；自动关联不可删除；游戏初始化期间额外产物发现不会写回旧游戏；缺失 cropRules 节点的迁移；重复 LoadedGame 不重复迁移；全局保存不包含当前游戏规则修改。
+
+为在 Unity 之外运行，测试替代了日志、Prefs.LogVerbose 及模组类型发现环境；规则和序列化逻辑使用生产代码。测试未启动 Unity 场景，未对按钮外观、窗口布局、实际地图加载顺序或 Smart Farming／HDH 的完整组合做游戏内验收。库存周期与工作拦截逻辑未改动。临时测试工程和 XML 文件已清理；保留源码、生产 DLL 和文档。
+
+## RimWorld 1.7 迁移验证（2026-10-18）
+
+环境：本机升级后的 `G:\SteamLibrary\steamapps\common\RimWorld`，Version.txt 为 **1.7.4981 rev136**，Assembly-CSharp 为 **1.7.9786.4087**，使用游戏自带 **.NET 10.0.13-waylithclr.dev** 和工坊 Harmony `2009463077/1.7/Assemblies/0Harmony.dll`。临时测试进程使用游戏运行时的副本，不修改玩家配置、启用列表或存档。
+
+先将原 1.6 DLL 放入真实 1.7 运行时，27 项隔离检查通过，表明核心逻辑和 Unity 类型重定向可沿用。随后修复 `AdditionalHarvestDiscovery.TargetMethods` 在进入游戏之前读取空的 `CropCatalog.Plants` 导致覆盖方法漏装的问题，基于实际 1.7 引用重新编译 1.7 DLL。补丁安装时改为读取已完成加载的植物定义；不增加 tick 内遍历。
+
+最终 1.7 DLL 共通过 **30 项运行断言**：种植区及水培箱 GetGizmos 补丁、右键预览补丁、进入存档之前的自定义额外产物覆盖方法补丁；GUI/Texture2D/Rect/Widgets/GenMapUI 类型解析、按钮绘制及数值输入 API；新规则默认双忽略、新游戏独立、换档恢复；实际 Scribe 保存及 FinalizeLoading 后阈值／双忽略和手动 StateId 恢复；超过上限、滞回区间保留、低于下限恢复及独立忽略；水培箱播种和收获拦截、整片收获预过滤、普通及 forced 派工拒绝；割除任务排除、600 ticks 常量；本机 HDH 1.7 DLL 的专用接口绑定及补丁安装；本机 UFPC 1.6 DLL 在 1.7 运行时下的副产物定义适配。
+
+测试提供了隔离的 Game/Map/Plant 和资源字典，替代日志、Prefs.LogVerbose、模组类型发现以及测试用玩家阵营访问。没有启动完整游戏场景；不等同于运行了完整地图生成、玩家存档、所有工作队列或第三方模组全组合。HDH 的结果只证明当前 1.7 接口绑定与补丁可安装，UFPC 的结果只证明副产物适配可用；没有据此宣称它们的全部游戏行为都已经实测。
+
+静态与打包核对：1.6/1.7 分别只路由自己的目录；两版中英文文件字节相同且语言键一致；1.7 `Assets.zip` 中存在 `Harvest.png.dds`、`Cancel.png.dds`、`ZoneCreate_Growing.png.dds` 对应的原版资源路径。**窗口布局、问号叠绘、70% 透明度、地图图标并排、UI 缩放及悬停／点击交互尚未做完整游戏内目视验收。不能将编译或 API 检查表述为所有显示均正常。**
+
+构建入口：`dotnet msbuild Source/StopFarmingItsEnough.csproj -t:BuildRimWorld17`，使用本机 .NET 9 SDK 的编译器与游戏自带 .NET 10 引用，成功且无编译警告／错误。构建只写入 1.7；保留 1.6 DLL，不使用 1.7 引用覆盖它。
+
+- 1.6 DLL SHA-256：`fbd9ce29fc0d6d0ba22caf5f7a49e4e281cf35a529206ddd154bdc9b356a01ef`
+- 1.7 DLL SHA-256：`512c2b8f78869c6e2c5eca14e19274953da118fc4a32203c703ab9770611655b`
+
+临时宿主、游戏运行时副本、测试源码、响应文件及测试 XML 已清理，不随模组发布。
+
+参考：[Ludeon 官方 1.7 公告](https://ludeon.com/blog/2026/10/announcing-the-waylith-engine-and-update-1-7/) 指出大部分模组预期可沿用，并要求作者测试后再声明兼容；本记录按实际验证范围区分接口检查与游戏内验收。

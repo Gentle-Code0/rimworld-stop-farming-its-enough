@@ -9,6 +9,7 @@ namespace StopFarmingItsEnough
     internal sealed class Window_AddHarvestProduct : Window
     {
         private readonly ThingDef plant;
+        private readonly Game owner;
         private readonly List<ThingDef> resources = new List<ThingDef>();
         private readonly List<ThingDef> filtered = new List<ThingDef>();
         private string search = "";
@@ -20,6 +21,7 @@ namespace StopFarmingItsEnough
         internal Window_AddHarvestProduct(ThingDef plant)
         {
             this.plant = plant;
+            owner = Current.Game;
             doCloseX = true;
             doCloseButton = true;
             absorbInputAroundWindow = true;
@@ -31,6 +33,7 @@ namespace StopFarmingItsEnough
         /// <summary>提供可搜索、虚拟化的产物选择列表；关联后默认忽略，等待玩家配置阈值。</summary>
         public override void DoWindowContents(Rect rect)
         {
+            if (owner != Current.Game) { Close(); return; }
             Widgets.Label(new Rect(0f, 0f, rect.width - 30f, 30f), "SFIE_AddProductTitle".Translate(plant.LabelCap));
             search = Widgets.TextField(new Rect(0f, 36f, rect.width, 28f), search);
             if (previousSearch != search)

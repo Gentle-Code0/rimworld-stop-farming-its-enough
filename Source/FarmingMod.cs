@@ -12,6 +12,7 @@ namespace StopFarmingItsEnough
         public const string ModTitle = "Stop farming, it's enough!";
         public const string HarmonyId = "GentleCode.StopFarmingItsEnough";
         public static FarmingSettings Settings;
+        private readonly NewGameDefaultsEditor defaultsEditor = new NewGameDefaultsEditor();
         /// <summary>读取全局设置并延迟安装补丁；逐作物目录在游戏初始化时建立。</summary>
         public FarmingMod(ModContentPack content) : base(content)
         {
@@ -52,8 +53,7 @@ namespace StopFarmingItsEnough
             float explanationHeight = Mathf.Max(54f, Text.CalcHeight(explanation, inRect.width));
             Widgets.Label(new Rect(inRect.x, y, inRect.width, explanationHeight), explanation);
             y += explanationHeight + 4f;
-            y += 32f;
-            Widgets.Label(new Rect(inRect.x, y, inRect.width, 90f), "SFIE_RulesLocation".Translate());
+            defaultsEditor.Draw(new Rect(inRect.x, y, inRect.width, Mathf.Max(40f, inRect.yMax - y)));
             Text.Font = oldFont;
         }
 

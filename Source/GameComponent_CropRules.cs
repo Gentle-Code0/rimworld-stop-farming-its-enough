@@ -1,4 +1,4 @@
-using Verse;
+﻿using Verse;
 
 namespace StopFarmingItsEnough
 {
@@ -42,8 +42,12 @@ namespace StopFarmingItsEnough
             BindRules();
         }
 
-        /// <summary>新游戏使用全新的默认忽略规则。</summary>
-        public override void StartedNewGame() { BindRules(); }
+        /// <summary>仅在新游戏初始化时复制全局模板，后续读档及模板编辑不会覆盖本存档。</summary>
+        public override void StartedNewGame()
+        {
+            if (!hasSavedRules) Settings = FarmingMod.Settings.NewGameDefaults.CopyForNewGame();
+            BindRules();
+        }
 
         /// <summary>在游戏加载结束后绑定目录并重建地图规则引用，保留地图的滞回记忆且不读取库存。</summary>
         private void BindRules()

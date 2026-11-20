@@ -77,7 +77,7 @@ namespace StopFarmingItsEnough
         }
 
         /// <summary>绘制与数据行一致的列标题；阈值为物品件数而非营养值或堆数。</summary>
-        private static void DrawHeader(Rect rect)
+        internal static void DrawHeader(Rect rect)
         {
             Widgets.Label(new Rect(rect.x, rect.y, rect.width * .26f, rect.height), "SFIE_Crop".Translate());
             Widgets.Label(new Rect(rect.x + rect.width * .27f, rect.y, rect.width * .27f, rect.height), "SFIE_Products".Translate());
@@ -87,14 +87,14 @@ namespace StopFarmingItsEnough
         }
 
         /// <summary>绘制一对作物与产物的独立设置；忽略框贴近文字，错误信息放在输入框下方。</summary>
-        private static void DrawRow(Rect rect, CropEntry entry, int index)
+        internal static void DrawRow(Rect rect, CropEntry entry, int index, CropRuleSettings target = null)
         {
             if (index % 2 == 0) Widgets.DrawLightHighlight(rect);
             DrawDefRow(new Rect(rect.x + 4f, rect.y + 3f, rect.width * .27f - 34f, 36f), entry.Plant);
             Rect add = new Rect(rect.x + rect.width * .27f - 27f, rect.y + 7f, 23f, 24f);
-            if (Widgets.ButtonText(add, "+")) Find.WindowStack.Add(new Window_AddHarvestProduct(entry.Plant));
+            if (target == null && Widgets.ButtonText(add, "+")) Find.WindowStack.Add(new Window_AddHarvestProduct(entry.Plant));
             TooltipHandler.TipRegion(add, "SFIE_AddProduct".Translate());
-            bool removable = CropCatalog.CanRemoveManual(entry);
+            bool removable = target == null && CropCatalog.CanRemoveManual(entry);
             if (removable)
             {
                 Rect remove = new Rect(rect.x + rect.width * .55f - 27f, rect.y + 7f, 23f, 24f);
@@ -120,7 +120,7 @@ namespace StopFarmingItsEnough
                 ref rule.Lower, ref rule.LowerBuffer, 0f, int.MaxValue);
             Widgets.TextFieldNumeric(new Rect(rect.x + rect.width * .885f, rect.y + 3f, rect.width * .105f, 28f),
                 ref rule.Upper, ref rule.UpperBuffer, 0f, int.MaxValue);
-            if (ignoredSowing != rule.IgnoreSowing || ignoredHarvest != rule.IgnoreHarvest || lower != rule.Lower || upper != rule.Upper) CropCatalog.Settings.Changed();
+            if (ignoredSowing != rule.IgnoreSowing || ignoredHarvest != rule.IgnoreHarvest || lower != rule.Lower || upper != rule.Upper) (target ?? CropCatalog.Settings).Changed();
             if (!Hysteresis.Valid(rule.Lower, rule.Upper) || rule.Lower == 0)
             {
                 GameFont old = Text.Font;

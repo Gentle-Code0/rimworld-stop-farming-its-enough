@@ -50,3 +50,21 @@ dotnet msbuild Source/StopFarmingItsEnough.csproj -t:BuildRimWorld17
 The separate `1.7/` directory contains the 1.5.1.0 build. RimWorld 1.6 keeps loading its existing 1.5.0.0 DLL from `1.6/`. Package identity and save keys are unchanged. Build 1.7 with `dotnet msbuild Source/StopFarmingItsEnough.csproj -t:BuildRimWorld17` using a .NET 9 SDK and the game-provided .NET 10 references; override `RimWorld17Dir` and `Harmony17Path` if needed. Ordinary Build/Release still targets 1.6 and requires a separate 1.6 installation.
 
 The 1.7 build also fixes discovery of additional-yield component overrides before the save-specific catalog exists. Thirty isolated checks passed on the actual 1.7 runtime. Language files, version routing and vanilla icon resources were checked. Full in-game visual validation and complete third-party mod combinations remain untested; see VALIDATION.md.
+
+## 1.6.0：新存档默认规则（2026-10-29）
+
+模组设置中恢复逐作物／产物上下限和独立忽略设置，顶部提示“此处设置只会改变新存档的初始阈值设置，不会改变已有存档中的阈值设置”。此处使用独立的 newGameDefaults 全局容器，保存模组设置即可保留默认配置。新游戏在 StartedNewGame 时深复制模板；各游戏之间、模板与游戏之间均不共享可变规则。加载已有存档继续使用其保存规则，不应用最新模板。旧版全局 rules 迁移模板独立保留，新默认值不会影响旧档升级逻辑。默认编辑器不读库存，也不切换当前存档作物目录。
+
+已重建当前 RimWorld 1.7 DLL，程序集版本 1.6.0.0。1.6 游戏源码及语言已同步，但本机没有 1.6 游戏引用，未重编译 1.6 DLL；1.6 用户需针对 1.6 游戏执行普通 Release 构建后才能使用本轮功能。
+
+Mod settings now contain editable defaults for new saves, including crop/product thresholds and both ignore options. New games receive independent copies; changing the template never changes an existing save, and editing a save never modifies the template. Existing-save loading and legacy migration remain separate. The 1.7 DLL has been rebuilt; the 1.6 DLL has not been rebuilt because matching game references are unavailable locally.
+
+### 1.6 DLL 补充构建
+
+现已使用 `G:\Games\Rimworld reference\1.6\Managed` 和工坊 Harmony 的 `1.6/Assemblies/0Harmony.dll` 完成 Release 构建，0 警告、0 错误，输出至 `1.6/Assemblies/StopFarmingItsEnough.dll`，程序集版本 1.6.0.0。此前“1.6 DLL 未重编译”的限制已解除；包含最新新存档默认阈值设置功能。未进行完整 1.6 游戏内目视验收。
+
+重新构建命令（在模组根目录执行）：
+
+```powershell
+dotnet build Source/StopFarmingItsEnough.csproj -c Release '-p:GameManaged=G:\Games\Rimworld reference\1.6\Managed' '-p:HarmonyPath=G:\SteamLibrary\steamapps\workshop\content\294100\2009463077\1.6\Assemblies\0Harmony.dll'
+```

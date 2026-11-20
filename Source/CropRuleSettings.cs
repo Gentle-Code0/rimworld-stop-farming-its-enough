@@ -14,6 +14,24 @@ namespace StopFarmingItsEnough
             Scribe_Collections.Look(ref Rules, "rules", LookMode.Deep);
             if (Scribe.mode == LoadSaveMode.PostLoadInit) { if (Rules == null) Rules = new List<CropRule>(); Reindex(); }
         }
+        /// <summary>为新游戏深复制模板；不共享规则、输入缓冲或索引，新手动关联获得独立状态标识。</summary>
+        public CropRuleSettings CopyForNewGame()
+        {
+            var copy = new CropRuleSettings();
+            foreach (CropRule rule in Rules)
+            {
+                if (rule == null) continue;
+                copy.Rules.Add(new CropRule {
+                    PlantDefName = rule.PlantDefName, ProductDefName = rule.ProductDefName,
+                    Source = rule.Source, Lower = rule.Lower, Upper = rule.Upper,
+                    IgnoreSowing = rule.IgnoreSowing, IgnoreHarvest = rule.IgnoreHarvest,
+                    StateId = rule.Source == ProductLinkSource.Manual ? System.Guid.NewGuid().ToString("N") : null
+                });
+            }
+            copy.Reindex();
+            return copy;
+        }
+
         /// <summary>重建设置索引并剔除损坏／重复键；只在启动或读取设置时运行。</summary>
         public void Reindex()
         {

@@ -54,6 +54,7 @@ namespace StopFarmingItsEnough
         public bool HideHarvestIcon;
         // 只用于旧存档升级；当前游戏编辑不写入迁移模板。
         public List<CropRule> LegacyRules = new List<CropRule>();
+        public CropRuleSettings NewGameDefaults = new CropRuleSettings();
         public int Revision { get; private set; }
         /// <summary>保存全局开关和只读迁移模板，当前规则随游戏保存。</summary>
         public override void ExposeData()
@@ -64,6 +65,8 @@ namespace StopFarmingItsEnough
             Scribe_Values.Look(ref HideSowingIcon, "hideSowingIcon", false);
             Scribe_Values.Look(ref HideHarvestIcon, "hideHarvestIcon", false);
             Scribe_Collections.Look(ref LegacyRules, "rules", LookMode.Deep);
+            Scribe_Deep.Look(ref NewGameDefaults, "newGameDefaults");
+            if (NewGameDefaults == null) NewGameDefaults = new CropRuleSettings();
             if (LegacyRules == null) LegacyRules = new List<CropRule>();
         }
         /// <summary>保持原有存档键格式。</summary>

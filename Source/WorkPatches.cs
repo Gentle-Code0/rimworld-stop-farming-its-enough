@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -13,6 +13,7 @@ namespace StopFarmingItsEnough
         /// <summary>保留原版／Smart Farming 的所有拒绝结果，仅额外拒绝被库存锁定的播种。</summary>
         private static void Postfix(IPlantToGrowSettable settable, Pawn pawn, ref bool __result)
         {
+            if (__result && settable is Zone_Growing zone && MapComponent_ZonePolicies.For(zone)?.NoSow == true) { __result = false; return; }
             if (__result && FarmingGate.Enabled(true) && FarmingGate.Managed(settable)
                 && FarmingGate.Paused(pawn.Map, settable.GetPlantDefToGrow(), true)) __result = false;
         }
@@ -27,6 +28,7 @@ namespace StopFarmingItsEnough
         [HarmonyAfter("owlchemist.smartfarming", "MapleApple.HighDensityHydroponics.Fixed.ZouHb.zades")]
         private static bool Prefix(Pawn pawn, IntVec3 c, ref Job __result)
         {
+            if (MapComponent_ZonePolicies.At(pawn.Map, c)?.NoSow == true) return true;
             if (!FarmingGate.BlockSowing(pawn.Map, c)) return true;
             __result = null;
             return false;
@@ -36,7 +38,8 @@ namespace StopFarmingItsEnough
         [HarmonyPriority(Priority.Last)]
         private static void Postfix(Pawn pawn, IntVec3 c, ref Job __result)
         {
-            if (__result != null && FarmingGate.BlockSowing(pawn.Map, c)) __result = null;
+            if (__result != null && ((__result.def == JobDefOf.Sow && FarmingGate.BlockSowing(pawn.Map, c))
+                || (ZonePolicyGate.IsCut(__result) && ZonePolicyGate.BlockCut(c.GetPlant(pawn.Map))))) __result = null;
         }
     }
 
@@ -47,7 +50,7 @@ namespace StopFarmingItsEnough
         /// <summary>逐株兜底：设施预过滤放行的混种、重叠及直接派工仍按实际植物判断。</summary>
         private static bool Prefix(Pawn pawn, IntVec3 c, ref bool __result)
         {
-            if (!FarmingGate.Enabled(false) || !c.InBounds(pawn.Map) || !FarmingGate.BlockHarvest(c.GetPlant(pawn.Map))) return true;
+            if (!c.InBounds(pawn.Map) || !FarmingGate.BlockHarvest(c.GetPlant(pawn.Map))) return true;
             __result = false;
             return false;
         }
@@ -56,7 +59,7 @@ namespace StopFarmingItsEnough
         [HarmonyPriority(Priority.Last)]
         private static void Postfix(Pawn pawn, IntVec3 c, ref bool __result)
         {
-            if (__result && FarmingGate.Enabled(false) && c.InBounds(pawn.Map) && FarmingGate.BlockHarvest(c.GetPlant(pawn.Map))) __result = false;
+            if (__result && c.InBounds(pawn.Map) && FarmingGate.BlockHarvest(c.GetPlant(pawn.Map))) __result = false;
         }
     }
 
@@ -69,6 +72,7 @@ namespace StopFarmingItsEnough
         private static void Postfix(Thing t, ref Job __result)
         {
             FarmingMenuPreview.ObserveDesignatedJob(__result);
+            if (ZonePolicyGate.IsCut(__result) && ZonePolicyGate.BlockCut(t as Plant)) __result = null;
             if (FarmingGate.IsHarvestJob(__result) && FarmingGate.BlockHarvest(t as Plant)) __result = null;
         }
     }
@@ -91,6 +95,7 @@ namespace StopFarmingItsEnough
         /// <summary>只给 Harvest/HarvestDesignated 添加条件，不给普通砍除任务增加持续检查。</summary>
         private static void Postfix(JobDriver_PlantWork __instance)
         {
+            __instance.AddEndCondition(() => ZonePolicyGate.End(__instance));
             if (FarmingGate.IsHarvestJob(__instance.job))
                 __instance.AddEndCondition(() => FarmingGate.HarvestEndCondition(__instance));
         }

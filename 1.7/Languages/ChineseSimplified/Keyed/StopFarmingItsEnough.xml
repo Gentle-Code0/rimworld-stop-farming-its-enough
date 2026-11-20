@@ -43,4 +43,10 @@
   <SFIE_IgnoreHarvestTip>勾选后，此作物＋产物规则不限制收获。播种由独立的忽略播种开关控制。默认勾选。</SFIE_IgnoreHarvestTip>
   <SFIE_IgnoreHarvest>忽略收获限制</SFIE_IgnoreHarvest>
   <SFIE_IgnoreSowingTip>勾选后，此作物＋产物规则不限制播种。收获由独立的忽略收获开关控制。默认勾选。</SFIE_IgnoreSowingTip>
+  <SFIE_ZoneNoSow>禁止种植</SFIE_ZoneNoSow>
+  <SFIE_ZoneNoSowTip>禁止本区播种，独立于库存阈值及总开关；不限制收获和割除。</SFIE_ZoneNoSowTip>
+  <SFIE_ZoneNoHarvest>禁止收获</SFIE_ZoneNoHarvest>
+  <SFIE_ZoneNoHarvestTip>禁止本区收获，独立于库存阈值及总开关；不限制播种和割除，包括病株清理。</SFIE_ZoneNoHarvestTip>
+  <SFIE_ZoneMatureOnly>仅割除成熟作物</SFIE_ZoneMatureOnly>
+  <SFIE_ZoneMatureOnlyTip>保护生长进度未到100%的可播种植物；枯萎病植物和不可播种的野生植物仍可割除。此开关不限制正常收获。</SFIE_ZoneMatureOnlyTip>
 </LanguageData>

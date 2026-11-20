@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
@@ -56,13 +56,14 @@ namespace StopFarmingItsEnough
         /// <summary>仅对玩家管理的设施追加按钮，关闭自动控制时仍允许编辑规则。</summary>
         private static void Postfix(IPlantToGrowSettable __instance, ref IEnumerable<Gizmo> __result)
         {
-            if (FarmingGate.Managed(__instance)) __result = Append(__result);
+            if (FarmingGate.Managed(__instance)) __result = Append(__result, __instance as Zone_Growing);
         }
         /// <summary>惰性保留上游按钮，然后追加规则入口。</summary>
-        private static IEnumerable<Gizmo> Append(IEnumerable<Gizmo> original)
+        private static IEnumerable<Gizmo> Append(IEnumerable<Gizmo> original, Zone_Growing zone)
         {
             foreach (Gizmo gizmo in original) yield return gizmo;
             yield return new Command_CropRules();
+            if (zone != null) foreach (Gizmo command in ZonePolicyIcons.Commands(zone)) yield return command;
         }
     }
 }

@@ -68,3 +68,25 @@ Mod settings now contain editable defaults for new saves, including crop/product
 ```powershell
 dotnet build Source/StopFarmingItsEnough.csproj -c Release '-p:GameManaged=G:\Games\Rimworld reference\1.6\Managed' '-p:HarmonyPath=G:\SteamLibrary\steamapps\workshop\content\294100\2009463077\1.6\Assemblies\0Harmony.dll'
 ```
+
+## 种植区手动开关与贴图（程序集 1.7.0.0）
+
+选中种植区后增加“禁止种植”“禁止收获”“仅割除成熟作物”三个独立切换按钮，默认均关闭。它们随地图／存档保存，独立于库存限额总开关，库存下降不会解除手动限制。按钮关闭只是撤销这项手动限制，不会覆盖库存或其他模组的限制。仅作用于种植区，不向水培箱添加这三个按钮。
+
+成熟判定为 Growth >= 1（100%）。保护所有可播种植物的幼苗，包括改种前遗留的旧作物；枯萎病植物始终可割除。不可播种的野生植物按杂草放行；模组添加的可播种草类仍按作物保护。“仅割除成熟作物”只限制割除，不限制正常收获。禁止收获不会禁止 CutPlant 病株清理；本模组不负责自动标记病株。
+
+状态采用地图组件按种植区引用查询，无每 tick 轮询、无定时区域地块扫描。区域派工入口优先过滤禁止播种／收获的区域，单株与执行阶段继续兜底。删除区域会删除其状态。新开关的自定义地图图标在未提供图片时不显示，按钮暂用原版绿勾／红叉。
+
+### 手动添加贴图
+
+已为 1.6 与 1.7 分别预留以下目录（内置 .gitkeep 只是目录占位，不是图片）。按正在使用的游戏版本放置；若希望两版都有图标，请复制到两版目录。使用 PNG、透明背景，文件名大小写与下表一致。添加后重启游戏，无需修改代码或重新编译 DLL。
+
+| 状态 | 按钮 PNG（建议 64×64，可用 128×128） | 地图状态 PNG（建议 64×64，实际显示 28×28） |
+|---|---|---|
+| 禁止种植 | `Textures/UI/ZonePolicies/Buttons/NoSow.png` | `Textures/UI/ZonePolicies/Overlays/NoSow.png` |
+| 禁止收获 | `Textures/UI/ZonePolicies/Buttons/NoHarvest.png` | `Textures/UI/ZonePolicies/Overlays/NoHarvest.png` |
+| 仅割除成熟作物 | `Textures/UI/ZonePolicies/Buttons/MatureOnly.png` | `Textures/UI/ZonePolicies/Overlays/MatureOnly.png` |
+
+上表路径相对于模组的 `1.6/` 或 `1.7/`。例如 1.7 禁止收获按钮完整路径为 `1.7/Textures/UI/ZonePolicies/Buttons/NoHarvest.png`。不需要在图片中画绿色对勾或红叉，原版 Command_Toggle 会显示开关状态。地图状态图只在对应开关开启时显示；三张图横向排列，与原库存暂停标记分行，位置采用区域首格作为锚点，避免遍历区域计算中心。建议主体留 4–8 像素透明边距，使用清晰轮廓。
+
+English: Three manual zone toggles are off by default and saved per map. They operate independently of inventory controls. Mature-only cutting protects sowable plants below 100% growth, except blighted plants; non-sowable wild plants remain cuttable. Normal harvesting is unaffected by mature-only cutting. Add optional transparent PNGs at the version-specific paths above and restart the game; no rebuild is needed. Buttons use vanilla check/cross icons until custom art is supplied; map overlays appear only when custom overlay art is supplied and the associated toggle is on.

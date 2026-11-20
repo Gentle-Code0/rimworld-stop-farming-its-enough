@@ -43,4 +43,10 @@
   <SFIE_IgnoreHarvestTip>Checked: this crop/product rule does not restrict harvesting. Sowing is controlled by its own ignore checkbox. Checked by default.</SFIE_IgnoreHarvestTip>
   <SFIE_IgnoreHarvest>Ignore harvest limit</SFIE_IgnoreHarvest>
   <SFIE_IgnoreSowingTip>Checked: this crop/product rule does not restrict sowing. Harvesting is controlled by its own ignore checkbox. Checked by default.</SFIE_IgnoreSowingTip>
+  <SFIE_ZoneNoSow>Forbid sowing</SFIE_ZoneNoSow>
+  <SFIE_ZoneNoSowTip>Block sowing in this zone independently of stock limits and global controls. Harvesting and cutting remain available.</SFIE_ZoneNoSowTip>
+  <SFIE_ZoneNoHarvest>Forbid harvesting</SFIE_ZoneNoHarvest>
+  <SFIE_ZoneNoHarvestTip>Block harvesting in this zone independently of stock limits and global controls. Sowing and cutting, including blighted plants, remain available.</SFIE_ZoneNoHarvestTip>
+  <SFIE_ZoneMatureOnly>Cut only mature crops</SFIE_ZoneMatureOnly>
+  <SFIE_ZoneMatureOnlyTip>Protect sowable plants below 100% growth from cutting. Blighted plants and non-sowable wild plants can still be cut. Normal harvesting is unaffected.</SFIE_ZoneMatureOnlyTip>
 </LanguageData>

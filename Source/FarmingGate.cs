@@ -1,4 +1,4 @@
-using RimWorld;
+﻿using RimWorld;
 using Verse;
 using Verse.AI;
 
@@ -35,7 +35,9 @@ namespace StopFarmingItsEnough
         /// <summary>以当前设施设定的作物判断播种；不修改 allowSow 或 Smart Farming 的 sowMode。</summary>
         public static bool BlockSowing(Map map, IntVec3 cell)
         {
-            if (!Enabled(true) || map == null || !cell.InBounds(map)) return false;
+            if (map == null || !cell.InBounds(map)) return false;
+            if (MapComponent_ZonePolicies.At(map, cell)?.NoSow == true) return true;
+            if (!Enabled(true)) return false;
             IPlantToGrowSettable grower = cell.GetPlantToGrowSettable(map);
             return Managed(grower) && Paused(map, grower.GetPlantDefToGrow(), true);
         }
@@ -43,7 +45,9 @@ namespace StopFarmingItsEnough
         /// <summary>以地上待收植物的实际 def 判断收获，确保改种后的旧作物使用自己的阈值。</summary>
         public static bool BlockHarvest(Plant plant)
         {
-            if (!Enabled(false) || plant == null || !plant.Spawned) return false;
+            if (plant == null || !plant.Spawned) return false;
+            if (MapComponent_ZonePolicies.At(plant.Map, plant.Position)?.NoHarvest == true) return true;
+            if (!Enabled(false)) return false;
             return Paused(plant.Map, plant.def, false) && Managed(plant.Position.GetPlantToGrowSettable(plant.Map));
         }
 
@@ -56,9 +60,10 @@ namespace StopFarmingItsEnough
         /// <summary>严格暂停正在执行的播种任务；原版清理动作会移除未完成的播种幼苗。</summary>
         public static JobCondition SowEndCondition(JobDriver driver)
         {
-            if (!Enabled(true) || driver.pawn.Map == null || driver.job == null) return JobCondition.Ongoing;
+            if (driver.pawn.Map == null || driver.job == null) return JobCondition.Ongoing;
             IntVec3 cell = driver.job.targetA.Cell;
             if (!cell.InBounds(driver.pawn.Map)) return JobCondition.Ongoing;
+            if (MapComponent_ZonePolicies.At(driver.pawn.Map, cell)?.NoSow == true) return JobCondition.Incompletable;
             IPlantToGrowSettable grower = cell.GetPlantToGrowSettable(driver.pawn.Map);
             // 使用 job.plantDefToSow：设施在小人移动途中改种，也不能用新作物规则放行旧任务。
             return Managed(grower) && Paused(driver.pawn.Map, driver.job.plantDefToSow, true)

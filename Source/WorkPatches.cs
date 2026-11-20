@@ -13,7 +13,7 @@ namespace StopFarmingItsEnough
         /// <summary>保留原版／Smart Farming 的所有拒绝结果，仅额外拒绝被库存锁定的播种。</summary>
         private static void Postfix(IPlantToGrowSettable settable, Pawn pawn, ref bool __result)
         {
-            if (__result && settable is Zone_Growing zone && MapComponent_ZonePolicies.For(zone)?.NoSow == true) { __result = false; return; }
+            if (__result && MapComponent_ZonePolicies.For(settable)?.NoSow == true) { __result = false; return; }
             if (__result && FarmingGate.Enabled(true) && FarmingGate.Managed(settable)
                 && FarmingGate.Paused(pawn.Map, settable.GetPlantDefToGrow(), true)) __result = false;
         }

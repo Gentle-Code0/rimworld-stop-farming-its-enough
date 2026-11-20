@@ -39,8 +39,23 @@ namespace StopFarmingItsEnough
                 component.policies.Add(zone, policy = new ZonePolicy());
             return policy;
         }
-        /// <summary>只查询目标格的区域；不遍历区域格子或植物。</summary>
-        public static ZonePolicy At(Map map, IntVec3 cell) => map == null || !cell.InBounds(map) ? null : For(cell.GetZone(map) as Zone_Growing);
+        /// <summary>统一查询种植区或玩家种植建筑；建筑状态保存在自身组件中，搬迁后仍保留。</summary>
+        public static ZonePolicy For(IPlantToGrowSettable grower, bool create = false)
+        {
+            if (grower is Zone_Growing zone) return For(zone, create);
+            var thing = grower as ThingWithComps;
+            return FarmingGate.Managed(grower) ? thing?.GetComp<CompGrowerPolicies>()?.Policy : null;
+        }
+        /// <summary>优先查询设施，再回退区域；低层非 edifice 种植建筑仅检查目标一格，不遍历地图。</summary>
+        public static ZonePolicy At(Map map, IntVec3 cell)
+        {
+            if (map == null || !cell.InBounds(map)) return null;
+            var grower = cell.GetPlantToGrowSettable(map);
+            if (grower is Building) return For(grower);
+            foreach (Thing thing in cell.GetThingList(map))
+                if (thing is Building && thing is IPlantToGrowSettable building) return For(building);
+            return For(grower);
+        }
         /// <summary>按区域引用序列化，读档不会依赖区域名称或当前选择植物。</summary>
         public override void ExposeData()
         {
@@ -63,13 +78,26 @@ namespace StopFarmingItsEnough
                 if (zone == null || zone.Map != map || zone.Cells.Count == 0) continue;
                 IntVec3 cell = zone.Cells[0];
                 if (!Find.CameraDriver.CurrentViewRect.Contains(cell) || cell.Fogged(map)) continue;
-                Vector2 position = GenMapUI.LabelDrawPosFor(cell);
-                position.y += 34f; // 与原库存暂停标记分行，三个手动状态横向并排。
-                int slot = 0;
-                for (int i = 0; i < 3; i++)
-                    if (ZonePolicyIcons.Active(pair.Value, i) && ZonePolicyIcons.Overlays[i] != null)
-                        GUI.DrawTexture(new Rect(position.x + slot++ * 32f, position.y, 28f, 28f), ZonePolicyIcons.Overlays[i]);
+                DrawPolicy(cell, pair.Value);
             }
+            // 只有提供自定义地图贴图时才访问现有玩家建筑列表，不遍历建筑占地或全地图。
+            foreach (Building building in map.listerBuildings.allBuildingsColonist)
+            {
+                if (!building.Spawned || !(building is IPlantToGrowSettable grower)) continue;
+                var policy = For(grower);
+                IntVec3 cell = building.Position;
+                if (policy != null && Find.CameraDriver.CurrentViewRect.Contains(cell) && !cell.Fogged(map)) DrawPolicy(cell, policy);
+            }
+        }
+        /// <summary>共用种植区与设施的标记布局；三个手动标记与库存标记分行显示。</summary>
+        private static void DrawPolicy(IntVec3 cell, ZonePolicy policy)
+        {
+            Vector2 position = GenMapUI.LabelDrawPosFor(cell);
+            position.y += 34f;
+            int slot = 0;
+            for (int i = 0; i < 3; i++)
+                if (ZonePolicyIcons.Active(policy, i) && ZonePolicyIcons.Overlays[i] != null)
+                    GUI.DrawTexture(new Rect(position.x + slot++ * 32f, position.y, 28f, 28f), ZonePolicyIcons.Overlays[i]);
         }
     }
     /// <summary>贴图只在启动读取一次；未提供自定义按钮图标时使用原版绿勾／红叉。</summary>
@@ -90,8 +118,8 @@ namespace StopFarmingItsEnough
         }
         /// <summary>返回按钮的当前启用状态。</summary>
         internal static bool Active(ZonePolicy p, int index) => index == 0 ? p.NoSow : index == 1 ? p.NoHarvest : p.MatureOnly;
-        /// <summary>只对选中的种植区生成三个标准切换按钮。</summary>
-        internal static IEnumerable<Gizmo> Commands(Zone_Growing zone)
+        /// <summary>对选中的种植区或玩家种植设施生成三个标准切换按钮。</summary>
+        internal static IEnumerable<Gizmo> Commands(IPlantToGrowSettable zone)
         {
             var p = MapComponent_ZonePolicies.For(zone, true);
             if (p == null) yield break;

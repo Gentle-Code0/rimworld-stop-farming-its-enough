@@ -150,8 +150,7 @@ namespace StopFarmingItsEnough
         [HarmonyPriority(Priority.Last)]
         private static void Postfix(WorkGiver_Grower __instance, IPlantToGrowSettable settable, Pawn pawn, ref bool __result)
         {
-            if (__result && __instance.GetType() == typeof(WorkGiver_GrowerHarvest) && settable is Zone_Growing zone
-                && MapComponent_ZonePolicies.For(zone)?.NoHarvest == true) { __result = false; return; }
+            if (__result && __instance.GetType() == typeof(WorkGiver_GrowerHarvest) && MapComponent_ZonePolicies.For(settable)?.NoHarvest == true) { __result = false; return; }
             if (!__result || __instance.GetType() != typeof(WorkGiver_GrowerHarvest) || !FarmingGate.Enabled(false)
                 || FarmingMenuPreview.Active) return;
             MapComponent_FarmingLimits component = MapComponent_FarmingLimits.For(pawn.Map);

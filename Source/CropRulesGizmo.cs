@@ -50,18 +50,29 @@ namespace StopFarmingItsEnough
         /// <summary>原版设施及沿用基类 GetGizmos 的模组设施均可使用此入口。</summary>
         private static IEnumerable<System.Reflection.MethodBase> TargetMethods()
         {
-            yield return AccessTools.Method(typeof(Zone_Growing), "GetGizmos");
-            yield return AccessTools.Method(typeof(Building_PlantGrower), "GetGizmos");
+            var methods = new HashSet<System.Reflection.MethodBase> { AccessTools.Method(typeof(Zone_Growing), "GetGizmos"), AccessTools.Method(typeof(Building_PlantGrower), "GetGizmos") };
+            foreach (ThingDef def in DefDatabase<ThingDef>.AllDefsListForReading)
+                if (def.thingClass != null && typeof(Building).IsAssignableFrom(def.thingClass)
+                    && typeof(IPlantToGrowSettable).IsAssignableFrom(def.thingClass))
+                {
+                    var method = AccessTools.Method(def.thingClass, "GetGizmos");
+                    if (method != null && !method.IsAbstract) methods.Add(method);
+                }
+            foreach (var method in methods) yield return method;
         }
         /// <summary>仅对玩家管理的设施追加按钮，关闭自动控制时仍允许编辑规则。</summary>
-        private static void Postfix(IPlantToGrowSettable __instance, ref IEnumerable<Gizmo> __result)
+        private static void Postfix(object __instance, ref IEnumerable<Gizmo> __result)
         {
-            if (FarmingGate.Managed(__instance)) __result = Append(__result, __instance as Zone_Growing);
+            var grower = __instance as IPlantToGrowSettable;
+            if (FarmingGate.Managed(grower)) __result = Append(__result, grower);
         }
         /// <summary>惰性保留上游按钮，然后追加规则入口。</summary>
-        private static IEnumerable<Gizmo> Append(IEnumerable<Gizmo> original, Zone_Growing zone)
+        private static IEnumerable<Gizmo> Append(IEnumerable<Gizmo> original, IPlantToGrowSettable zone)
         {
-            foreach (Gizmo gizmo in original) yield return gizmo;
+            // 派生设施调用 base.GetGizmos 时可能经过多个补丁；只追加一组按钮。
+            bool alreadyAdded = false;
+            foreach (Gizmo gizmo in original) { if (gizmo is Command_CropRules) alreadyAdded = true; yield return gizmo; }
+            if (alreadyAdded) yield break;
             yield return new Command_CropRules();
             if (zone != null) foreach (Gizmo command in ZonePolicyIcons.Commands(zone)) yield return command;
         }

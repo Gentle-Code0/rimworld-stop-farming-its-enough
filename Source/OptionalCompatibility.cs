@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using System.Linq.Expressions;
 using HarmonyLib;
@@ -53,7 +53,8 @@ namespace StopFarmingItsEnough
         private static void HydroSowPostfix(Building_PlantGrower __instance, ref bool __result)
         {
             if (__result && FarmingGate.Managed(__instance)
-                && FarmingGate.Paused(__instance.Map, __instance.GetPlantDefToGrow(), true)) __result = false;
+                && (MapComponent_ZonePolicies.For(__instance)?.NoSow == true
+                    || FarmingGate.Paused(__instance.Map, __instance.GetPlantDefToGrow(), true))) __result = false;
         }
 
         /// <summary>收获暂停时停止内部批次向地面输出；使用当前批次植物而非下一批设定，保留外部生命周期更新。</summary>
@@ -62,7 +63,8 @@ namespace StopFarmingItsEnough
             // Harmony 的 ___前缀 + 字段原名 _currentPlantDefToGrow = 四条下划线。
             // 这里只阻止收获阶段处理：TickRare/TickLong 的衰老、环境伤害及电力逻辑照常运行。
             return !FarmingGate.Managed(__instance)
-                || !FarmingGate.Paused(__instance.Map, ____currentPlantDefToGrow, false);
+                || (MapComponent_ZonePolicies.For(__instance)?.NoHarvest != true
+                    && !FarmingGate.Paused(__instance.Map, ____currentPlantDefToGrow, false));
         }
     }
 }

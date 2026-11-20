@@ -18,7 +18,7 @@ namespace StopFarmingItsEnough
         public static bool Managed(IPlantToGrowSettable grower)
         {
             if (grower is Zone_Growing) return true;
-            Building_PlantGrower building = grower as Building_PlantGrower;
+            Building building = grower as Building;
             return building != null && building.Faction == Faction.OfPlayer;
         }
 

@@ -90,3 +90,13 @@ dotnet build Source/StopFarmingItsEnough.csproj -c Release '-p:GameManaged=G:\Ga
 上表路径相对于模组的 `1.6/` 或 `1.7/`。例如 1.7 禁止收获按钮完整路径为 `1.7/Textures/UI/ZonePolicies/Buttons/NoHarvest.png`。不需要在图片中画绿色对勾或红叉，原版 Command_Toggle 会显示开关状态。地图状态图只在对应开关开启时显示；三张图横向排列，与原库存暂停标记分行，位置采用区域首格作为锚点，避免遍历区域计算中心。建议主体留 4–8 像素透明边距，使用清晰轮廓。
 
 English: Three manual zone toggles are off by default and saved per map. They operate independently of inventory controls. Mature-only cutting protects sowable plants below 100% growth, except blighted plants; non-sowable wild plants remain cuttable. Normal harvesting is unaffected by mature-only cutting. Add optional transparent PNGs at the version-specific paths above and restart the game; no rebuild is needed. Buttons use vanilla check/cross icons until custom art is supplied; map overlays appear only when custom overlay art is supplied and the associated toggle is on.
+
+## 种植设施手动开关扩展（程序集 1.7.1.0）
+
+三个手动按钮现在同时适用于种植区、原版水培箱和模组的种植接口建筑（Building + IPlantToGrowSettable），包括 Building_PlantGrower 派生设施。启动时一次性给种植建筑定义增加无 tick 的 CompGrowerPolicies；每栋建筑独立保存三项状态，旧存档中已有建筑默认关闭。状态保存在建筑组件，拆卸／重装和跨地图搬迁不依赖原地图字典。发现派生 GetGizmos 覆盖方法并安装按钮补丁，调用基类时避免按钮重复。
+
+设施的播种、收获、割除按原版目标入口及工作执行阶段限制，整设施播种／收获搜索可提前排除。目标归属优先设施再区域；低层非 edifice 箱体只检查目标一个格子的物体列表。HDH 内部播种与收获接口也接入手动开关。完全自定义的自动农场若不实现原版种植接口、或绕过原版任务系统直接生成／销毁植物，需要针对其 API 单独适配；本轮不能宣称覆盖未知模组的一切内部行为。
+
+设施地图状态标记复用原有 Overlays 文件；只有提供自定义状态贴图时才读取现有玩家建筑列表绘制，不扫描设施占地、种植区地块或库存。原有六个 PNG 路径与文件名保持有效。没有添加定时扫描或生长轮询。
+
+English: The three manual toggles now also support vanilla hydroponics and modded buildings implementing IPlantToGrowSettable, including Building_PlantGrower subclasses. A non-ticking component saves each building's independent state and defaults existing buildings to off. Derived gizmo overrides are detected without duplicating buttons. HDH internal sowing and harvesting now respect manual switches. The existing texture paths are reused. Fully custom farms that bypass vanilla planting interfaces or job execution require dedicated adapters.

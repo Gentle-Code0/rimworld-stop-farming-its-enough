@@ -23,6 +23,7 @@ namespace StopFarmingItsEnough
         /// <summary>安装原版与可选兼容补丁；只运行一次，不修改其他模组的文件或存档字段。</summary>
         private static void Initialize()
         {
+            CompGrowerPolicies.InstallDefinitions();
             var harmony = new Harmony(HarmonyId);
             harmony.PatchAll(typeof(FarmingMod).Assembly);
             OptionalCompatibility.Install(harmony);
